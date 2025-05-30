@@ -12,8 +12,12 @@ uploaded_file = st.file_uploader("📁 음식/레시피 엑셀 파일을 업로�
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
 
+    # 🍳 음식 이름을 키로 하여 재료와 만드는 법을 함께 저장
     recipe_db = {
-        row["음식이름"]: [i.strip() for i in str(row["재료"]).split(",")]
+        row["음식이름"]: {
+            "재료": [i.strip() for i in str(row["재료"]).split(",")],
+            "레시피": row["만드는법"] if "만드는법" in row and pd.notna(row["만드는법"]) else "설명 없음"
+        }
         for _, row in df.iterrows()
     }
 
@@ -38,8 +42,13 @@ if uploaded_file:
             missing_ingredients = set()
             for meal in next_meals:
                 st.markdown(f"### 🍽️ {meal}")
-                ingredients = recipe_db.get(meal, [])
-                st.write("재료:", ", ".join(ingredients))
+                meal_info = recipe_db.get(meal, {})
+                ingredients = meal_info.get("재료", [])
+                recipe_text = meal_info.get("레시피", "레시피 없음")
+
+                st.write("**재료:**", ", ".join(ingredients))
+                st.write("**간단한 만드는 법:**", recipe_text)  # 👈 레시피 출력 추가
+
                 for item in ingredients:
                     if item not in fridge_ingredients:
                         missing_ingredients.add(item)
